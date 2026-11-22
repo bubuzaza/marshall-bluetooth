@@ -5,6 +5,7 @@ import readline from 'node:readline';
 import fs from 'node:fs';
 
 Menu.setApplicationMenu(null); // clean amp look — no default File/Edit/View menu
+app.setAppUserModelId('com.marshall.controller'); // Windows uses our taskbar/alt-tab icon, not Electron's
 
 const DEBUG_LOG = path.join(import.meta.dirname, '..', 'debug.log'); // repo root
 try { fs.writeFileSync(DEBUG_LOG, ''); } catch {}
@@ -53,6 +54,7 @@ function createWindow() {
     show: false,
     frame: false, // custom amp-themed title bar
     maximizable: false, // fixed portrait app — minimize + close only
+    icon: path.join(import.meta.dirname, '..', 'assets', 'icon.ico'),
     webPreferences: {
       contextIsolation: true,
       preload: path.join(import.meta.dirname, 'preload.cjs'),

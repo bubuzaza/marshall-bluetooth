@@ -118,8 +118,8 @@
         </div>
       </section>
 
-      <!-- ── Presets (local) + Night (BLE) ── -->
-      <section class="controls panel p-4">
+      <!-- ── EQ presets (models with EQUALIZER_SETTINGS, e.g. Emberton II — no manual bass/treble) ── -->
+      <section class="controls panel p-4" data-needs="EQUALIZER_SETTINGS">
         <div class="engrave mb-3">Presets</div>
         <div id="eqGroup" class="flex flex-wrap gap-2">
           <button data-eq="flat" class="switch px-3 py-2 text-[11px]" aria-pressed="true">Flat</button>
@@ -128,8 +128,11 @@
           <button data-eq="electronic" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Electronic</button>
           <button data-eq="hiphop" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Hip-Hop</button>
         </div>
+      </section>
 
-        <div class="mt-4 flex items-center justify-between border-t border-[#e9e1cf]/8 pt-3" data-needs="NIGHT_MODE">
+      <!-- ── Night mode ── -->
+      <section class="controls panel p-4" data-needs="NIGHT_MODE">
+        <div class="flex items-center justify-between">
           <span class="engrave">Night Mode</span>
           <button id="night" class="switch px-4 py-2 text-[11px]" aria-pressed="false">Off</button>
         </div>

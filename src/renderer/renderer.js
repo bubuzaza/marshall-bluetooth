@@ -15,7 +15,7 @@ window.addEventListener('error', (e) => _rlog('JS ERROR: ' + (e && (e.message ||
 if (!window.BLE) _rlog('FATAL: ble-protocol.js did not load (window.BLE missing).');
 if (!window.ble) _rlog('FATAL: preload bridge missing (window.ble undefined) — check preload.cjs.');
 
-const { CHARS, SOURCE_CODE, enc, dec, IMG_BASE, MODEL_CODENAME } = window.BLE || {};
+const { CHARS, SOURCE_CODE, PRESET_CODE, enc, dec, IMG_BASE, MODEL_CODENAME } = window.BLE || {};
 const bridge = window.ble || { send() {}, onEvent() {} };
 
 const $ = (id) => document.getElementById(id);
@@ -192,11 +192,13 @@ function reflectSource(code) {
   sourceGroup.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(SOURCE_CODE[b.dataset.src] === code)));
 }
 
-/* ───────────── EQ presets (local visual only) ───────────── */
+/* ───────────── EQ presets (EQUALIZER_SETTINGS; models without manual bass/treble) ───────────── */
 $('eqGroup').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
   $('eqGroup').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+  const code = PRESET_CODE[btn.dataset.eq];
+  if (code != null) writeKey('EQUALIZER_SETTINGS', enc.eqPreset(code));
 });
 
 /* ───────────── Night mode ───────────── */

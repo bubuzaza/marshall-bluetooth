@@ -19,13 +19,13 @@ now-playing info, in a portrait amp-styled window.
 
 ## Features
 
-- 🎚️ **Volume** rotary knob shown 0–100%, with one-tap **Calibrate** so the number matches Windows exactly
-- 🎛️ **Tone** — Bass & Treble (the speaker's 2-band EQ)
-- 🔌 **Source** — BT / RCA / AUX / HDMI (only the inputs the speaker actually exposes are enabled)
-- 🌙 **Night mode**
-- ⏯️ **Now playing** — title / artist + ⏮ ⏯ ⏭, from the Windows media session
-- 🖼️ **Per-model artwork** from Marshall's image CDN; **multi-model** via a ~28-model catalog
-- ✨ Amp-styled UI with GSAP motion (honors `prefers-reduced-motion`)
+- **Volume** rotary knob shown 0–100%, with one-tap **Calibrate** so the number matches Windows exactly
+- **EQ** — Bass & Treble faders on models that expose them, or one-tap genre **presets** on models that don't (e.g. Emberton II); the app shows whichever the speaker supports
+- **Source** — BT / RCA / AUX / HDMI (only the inputs the speaker actually exposes are enabled)
+- **Night mode** — the speaker's dynamic-range limiter (tames loud peaks for quiet-hours listening)
+- **Now playing** — title / artist with transport controls, from the Windows media session
+- **Per-model artwork** from Marshall's image CDN, with **multi-model** support via a ~28-model catalog
+- Amp-styled UI with GSAP motion (honors `prefers-reduced-motion`)
 
 ---
 
@@ -65,8 +65,12 @@ link. Web Bluetooth and Electron's renderer BLE can't pair/bond on Windows — e
 .
 ├── README.md
 ├── package.json
+├── assets/
+│   ├── icon.ico             # app icon (Windows taskbar / alt-tab)
+│   └── icon.png
 ├── docs/
-│   └── PROTOCOL.md          # full reverse-engineered BLE spec
+│   ├── PROTOCOL.md          # full reverse-engineered BLE spec
+│   └── screenshot.png
 └── src/
     ├── main.js              # Electron main process
     ├── preload.cjs          # contextBridge: window.ble + window.win
@@ -162,6 +166,7 @@ legacy(XXXX) = 0000XXXX-0000-1000-8000-00805f9b34fb
 | Volume        | `0007` | 1 byte — step `0..limit` (byte ≥ 0x80 = invalid) |
 | Volume limit  | `0008` | 1 byte — max step (31 on this unit) |
 | Graphical EQ  | `000f` | 5 bytes `[bass, low, mid, upper, treble]`, each 0–10 (`0xFF` = band absent) |
+| EQ presets    | `0017` | assign preset to a step — `[0x01, step, preset]` (FLAT 0 · ROCK 2 · HIPHOP 5 · ELECTRONIC 6 · JAZZ 7) |
 | Audio source  | `001b` | 1 byte code — BT 0 · AUX 2 · RCA 3 · HDMI 5 … |
 | Night mode    | `001f` | 1 byte — 0 / 1 |
 | Audio control | `0009` | 1 byte — 0 pause · 1 play · 2 prev · 3 next |
@@ -169,9 +174,12 @@ legacy(XXXX) = 0000XXXX-0000-1000-8000-00805f9b34fb
 | Firmware      | `2a26` | UTF-8 |
 | Battery       | `2a19` | uint8 % |
 
-> **Stanmore III's EQ is just Bass + Treble.** It reports `GRAPHICAL_EQ = 07 FF FF FF 07` — the three
-> middle bands are absent. The preset characteristic (`0017`) isn't exposed either, so the mobile
-> app's "presets" on this model are only saved bass/treble combinations.
+> **EQ differs per model, and the app feature-detects it.** Stanmore III exposes `GRAPHICAL_EQ`
+> (`07 FF FF FF 07` — only Bass + Treble; the three middle bands are absent) but **not** the preset
+> characteristic `0017`. A portable like Emberton II is the opposite — no manual bass/treble, only genre
+> **presets** via `0017`. On connect the bridge reports which characteristics the speaker actually has,
+> and the UI dims any control the model lacks — so the **Tone** and **Presets** panels each light up only
+> on the models that support them. No per-model code is needed.
 
 **Bonding (Windows).** Control writes need an encrypted link; Windows derives the LE key from the
 Classic audio pairing (CTKD) — which is why you pair the audio device first. Bleak then

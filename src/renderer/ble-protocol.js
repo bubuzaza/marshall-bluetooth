@@ -25,6 +25,7 @@
       AUDIO_SOURCE: { key: 'AUDIO_SOURCE', uuid: custom('001b'), legacy: sig('aa29') },
       NIGHT_MODE: { key: 'NIGHT_MODE', uuid: custom('001f'), legacy: sig('aa2d') },
       GRAPHICAL_EQ: { key: 'GRAPHICAL_EQ', uuid: custom('000f'), legacy: sig('aa16') },
+      EQUALIZER_SETTINGS: { key: 'EQUALIZER_SETTINGS', uuid: custom('0017'), legacy: sig('aa25') },
       AUDIO_CONTROL: { key: 'AUDIO_CONTROL', uuid: custom('0009'), legacy: sig('aa10') },
       MODEL_NAME: { key: 'MODEL_NAME', uuid: sig('2a24') },
       FIRMWARE: { key: 'FIRMWARE', uuid: sig('2a26') },
@@ -33,6 +34,10 @@
 
     SOURCE_CODE: { bt: 0, wifi: 1, aux: 2, rca: 3, optical: 4, hdmi: 5, bleaudio: 6, usbc: 7, broadcast: 8, hdmiearc: 9 },
     SOURCE_LABEL: { 0: 'Bluetooth', 1: 'Wi-Fi', 2: 'AUX', 3: 'RCA', 4: 'Optical', 5: 'HDMI', 6: 'BLE Audio', 7: 'USB-C', 8: 'Broadcast', 9: 'HDMI eARC' },
+
+    // EQ presets for models that expose EQUALIZER_SETTINGS (0017) — e.g. Emberton II, which has no
+    // manual bass/treble. Values are EqStepPreset ids (PROTOCOL.md): FLAT 0, ROCK 2, HIPHOP 5, ELECTRONIC 6, JAZZ 7.
+    PRESET_CODE: { flat: 0, rock: 2, jazz: 7, electronic: 6, hiphop: 5 },
 
     // Remote product images (Marshall CDN); map the MODEL_NAME characteristic -> image codename.
     IMG_BASE: 'https://app-images.marshall.software/marshall-bt/android/prod/',
@@ -53,6 +58,8 @@
       source: (code) => Uint8Array.of(code & 0xff),
       night: (on) => Uint8Array.of(on ? 1 : 0),
       eq5: (arr) => Uint8Array.from(arr.slice(0, 5).map((x) => x & 0xff)), // [bass,low,mid,upper,treble]
+      // Apply an EQ preset: assign it to the active step (STEP_1). WRITE = [0x01, step, preset].
+      eqPreset: (preset) => Uint8Array.of(0x01, 0x00, preset & 0xff),
     },
 
     dec: {

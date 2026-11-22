@@ -30,6 +30,7 @@ CHARS = {
     'AUDIO_SOURCE': (cu('001b'), sg('aa29')),
     'NIGHT_MODE': (cu('001f'), sg('aa2d')),
     'GRAPHICAL_EQ': (cu('000f'), sg('aa16')),
+    'EQUALIZER_SETTINGS': (cu('0017'), sg('aa25')),  # preset-based EQ (models without manual bass/treble)
     'AUDIO_CONTROL': (cu('0009'), sg('aa10')),
     'MODEL_NAME': (sg('2a24'), None),
     'FIRMWARE': (sg('2a26'), None),
