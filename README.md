@@ -7,6 +7,10 @@ the official mobile app does.
 Volume, tone, input source, night mode, transport controls, per-model speaker artwork and live
 now-playing info, in a portrait amp-styled window.
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="Marshall Controller — Stanmore III connected, volume at 58%" width="360">
+</p>
+
 > Reverse-engineered from the official Marshall Bluetooth Android app (`com.zoundindustries.marshallbt`
 > v3.9.2) by static analysis, to control a speaker I own. No code from that app is included. Not
 > affiliated with or endorsed by Marshall Amplification or Zound Industries.
