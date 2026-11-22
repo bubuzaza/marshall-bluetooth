@@ -1,0 +1,24 @@
+{
+  "name": "flatback",
+  "module": "index.ts",
+  "main": "main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "css": "tailwindcss -i ./input.css -o ./styles.css",
+    "css:watch": "tailwindcss -i ./input.css -o ./styles.css --watch",
+    "start": "electron ."
+  },
+  "trustedDependencies": [
+    "electron"
+  ],
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "@types/bun": "latest",
+    "electron": "^45.4.1",
+    "tailwindcss": "^4.3.5"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}
