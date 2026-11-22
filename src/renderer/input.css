@@ -110,6 +110,7 @@
     align-items: center;
     justify-content: center;
     color: rgba(233, 225, 207, 0.5);
+    cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
   .titlebar button:hover {
@@ -241,6 +242,7 @@
     background: linear-gradient(180deg, rgba(233, 225, 207, 0.05), rgba(0, 0, 0, 0.18));
     border: 1px solid rgba(233, 225, 207, 0.1);
     border-radius: 9px;
+    cursor: pointer;
     transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   }
   .switch:hover {
