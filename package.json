@@ -8,17 +8,50 @@
   "scripts": {
     "start": "electron .",
     "css": "tailwindcss -i ./src/renderer/input.css -o ./src/renderer/styles.css",
-    "css:watch": "tailwindcss -i ./src/renderer/input.css -o ./src/renderer/styles.css --watch"
+    "css:watch": "tailwindcss -i ./src/renderer/input.css -o ./src/renderer/styles.css --watch",
+    "pack": "electron-builder --win --dir",
+    "dist": "electron-builder --win"
   },
-  "trustedDependencies": [
-    "electron"
-  ],
+  "build": {
+    "appId": "com.marshall.controller",
+    "productName": "Marshall Controller",
+    "directories": {
+      "output": "dist"
+    },
+    "files": ["src/**/*", "!src/bridge/**/*", "package.json"],
+    "extraResources": [
+      {
+        "from": "src/bridge",
+        "to": "bridge",
+        "filter": ["**/*", "!**/__pycache__/**"]
+      },
+      {
+        "from": "assets",
+        "to": "assets"
+      }
+    ],
+    "win": {
+      "target": ["portable", "nsis"],
+      "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "MarshallController-portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "MarshallController-Setup.exe"
+    }
+  },
+  "trustedDependencies": ["electron"],
   "dependencies": {
     "gsap": "^3.15.1"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.5",
     "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
     "tailwindcss": "^4.3.5"
   }
 }

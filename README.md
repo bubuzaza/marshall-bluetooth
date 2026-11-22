@@ -133,10 +133,13 @@ bun run start
 - **Volume** — drag around the knob, scroll it, or use arrow keys. The readout is 0–100%.
   - **Calibrate %** sweeps the speaker through every step, reads the true Windows level at each, and
     stores a per-device table so the shown % matches Windows. Keep audio paused during the sweep.
-- **Tone** — Bass / Treble faders.
+- **Tone** — Bass / Treble faders (on models with manual EQ).
+- **Presets** — one-tap genre EQ (on models that use presets instead, e.g. Emberton II).
 - **Source** — pick the input (unsupported inputs are dimmed).
 - **Night mode** — toggle.
 - **Now playing** — whatever is playing on Windows, with transport controls.
+- **System tray** — the ✕ button hides the window to the tray and keeps the speaker connected in the
+  background; click the tray icon to bring it back, or right-click → **Quit** to exit.
 
 ### Other speaker models
 
@@ -144,6 +147,28 @@ The app identifies the speaker from its advertised name / model and adapts: it e
 controls that model exposes and loads that model's artwork. The model→image map lives in
 `src/renderer/ble-protocol.js` (`MODEL_CODENAME`) and covers ~28 Marshall models
 (Stanmore / Acton / Woburn III, Emberton II, Middleton, Willen, …).
+
+---
+
+## Build a Windows .exe
+
+```powershell
+bun run dist     # portable .exe + installer -> dist/
+# or
+bun run pack     # unpacked app folder (faster, for a quick test)
+```
+
+`bun run dist` writes two files to `dist/`:
+
+- **MarshallController-portable.exe** — single file, no install; just double-click.
+- **MarshallController-Setup.exe** — an installer (pick a folder, adds a Start-menu shortcut).
+
+Builds are unsigned, so Windows SmartScreen warns on first launch (*More info → Run anyway*).
+
+> **The target machine still needs Python + the bridge deps.** The packaged app spawns the system
+> `python` with the bundled bridge (shipped under the app's resources), so Python and a
+> `pip install -r` of the bridge requirements must be present. Making it fully self-contained
+> (bundling the bridge as its own `.exe` with PyInstaller, so no Python is needed) is a possible next step.
 
 ---
 
