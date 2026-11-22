@@ -1,0 +1,6 @@
+# Python BLE bridge dependencies (Windows only).
+#   pip install -r requirements.txt
+bleak                        # BLE connect / bond / GATT (WinRT backend)
+pycaw                        # Core Audio endpoint volume % (for Calibrate); pulls in comtypes
+comtypes                     # COM bindings used by pycaw (listed explicitly; imported directly)
+winrt-Windows.Media.Control  # Windows media session (SMTC) for now-playing + transport

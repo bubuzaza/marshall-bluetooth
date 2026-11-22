@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marshall Controller</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://app-images.marshall.software; script-src 'self'" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <!-- avoid-ai-design-ignore-file: K7 — :focus-visible is handled centrally in input.css (brass ring on all controls) -->
+  <body class="flex h-screen flex-col overflow-hidden">
+    <header id="titlebar" class="titlebar">
+      <button id="winMin" title="Minimize">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1"><path d="M2 6h8" /></svg>
+      </button>
+      <button id="winClose" title="Close">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+      </button>
+    </header>
+    <main class="flex min-h-0 flex-1 justify-center">
+      <div class="cabinet flex h-full w-full max-w-[440px] flex-col gap-4 px-6 pt-2 pb-3">
+      <!-- ── Header ── -->
+      <header class="flex items-start justify-between">
+        <div>
+          <div class="wordmark text-[42px]">Marshall</div>
+          <div id="deviceName" class="engrave ml-0.5 mt-1">Not connected</div>
+        </div>
+
+        <button
+          id="powerBtn"
+          class="switch flex h-11 w-11 items-center justify-center rounded-full"
+          title="Power / Connect"
+          aria-pressed="false"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M12 3v9" />
+            <path d="M6.5 7a8 8 0 1 0 11 0" />
+          </svg>
+        </button>
+      </header>
+
+      <!-- ── Status strip ── -->
+      <div class="flex items-center justify-between border-y border-[#e9e1cf]/8 py-2">
+        <div class="flex items-center gap-2.5">
+          <span class="led"></span>
+          <span id="statusText" class="engrave">Standby</span>
+        </div>
+        <span id="statusMeta" class="readout text-[11px] text-cream/30">—</span>
+      </div>
+
+      <div class="scroll-area flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
+      <!-- ── Device image (remote, per model) ── -->
+      <div class="deviceimg-wrap flex justify-center pt-1">
+        <img id="deviceImg" alt="" class="hidden -mt-14 max-h-[380px] w-auto object-contain drop-shadow-2xl" />
+      </div>
+      <!-- ── Volume (hero) ── -->
+      <section class="controls flex flex-col items-center gap-2 pt-1" data-needs="VOLUME">
+        <div class="engrave">Volume</div>
+
+        <div class="relative" style="width: 182px; height: 182px">
+          <svg class="absolute inset-0" width="182" height="182" viewBox="0 0 182 182" fill="none">
+            <circle cx="91" cy="91" r="78" stroke="rgba(233,225,207,0.12)" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="367.6 122.5" transform="rotate(135 91 91)" />
+            <circle id="volArc" cx="91" cy="91" r="78" stroke="#c38f42" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="183.8 490" transform="rotate(135 91 91)" />
+          </svg>
+
+          <div
+            id="knob"
+            class="knob absolute"
+            style="left: 27px; top: 27px"
+            tabindex="0"
+            role="slider"
+            aria-label="Volume"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="50"
+          >
+            <div id="knobPointer" class="knob-pointer"></div>
+          </div>
+        </div>
+
+        <div class="readout mt-1 text-[32px] text-cream"><span id="volVal">50</span></div>
+        <button id="calibBtn" class="switch mt-1 px-3 py-1 text-[10px]">Calibrate&nbsp;%</button>
+        <div id="calibStatus" class="engrave mt-1.5 hidden text-[10px] text-cream/45"></div>
+      </section>
+
+      <!-- ── Tone (bass/treble = GRAPHICAL_EQ bands 0 & 4, range 0–10) ── -->
+      <section class="controls panel p-4" data-needs="GRAPHICAL_EQ">
+        <div class="engrave mb-4">Tone</div>
+        <div class="space-y-4">
+          <div>
+            <div class="mb-2 flex items-baseline justify-between">
+              <span class="engrave">Bass</span>
+              <span id="bassVal" class="readout text-[13px] text-cream/70">5</span>
+            </div>
+            <input id="bass" type="range" min="0" max="10" value="5" class="fader" />
+          </div>
+          <div>
+            <div class="mb-2 flex items-baseline justify-between">
+              <span class="engrave">Treble</span>
+              <span id="trebleVal" class="readout text-[13px] text-cream/70">5</span>
+            </div>
+            <input id="treble" type="range" min="0" max="10" value="5" class="fader" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Source ── -->
+      <section class="controls panel p-4" data-needs="AUDIO_SOURCE">
+        <div class="engrave mb-3">Source</div>
+        <div id="sourceGroup" class="grid grid-cols-4 gap-2">
+          <button data-src="bt" class="switch py-2.5 text-[11px]" aria-pressed="true">BT</button>
+          <button data-src="rca" class="switch py-2.5 text-[11px]" aria-pressed="false">RCA</button>
+          <button data-src="aux" class="switch py-2.5 text-[11px]" aria-pressed="false">AUX</button>
+          <button data-src="hdmi" class="switch py-2.5 text-[11px]" aria-pressed="false">HDMI</button>
+        </div>
+      </section>
+
+      <!-- ── EQ presets (models with EQUALIZER_SETTINGS, e.g. Emberton II — no manual bass/treble) ── -->
+      <section class="controls panel p-4" data-needs="EQUALIZER_SETTINGS">
+        <div class="engrave mb-3">Presets</div>
+        <div id="eqGroup" class="flex flex-wrap gap-2">
+          <button data-eq="flat" class="switch px-3 py-2 text-[11px]" aria-pressed="true">Flat</button>
+          <button data-eq="rock" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Rock</button>
+          <button data-eq="jazz" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Jazz</button>
+          <button data-eq="electronic" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Electronic</button>
+          <button data-eq="hiphop" class="switch px-3 py-2 text-[11px]" aria-pressed="false">Hip-Hop</button>
+        </div>
+      </section>
+
+      <!-- ── Night mode ── -->
+      <section class="controls panel p-4" data-needs="NIGHT_MODE">
+        <div class="flex items-center justify-between">
+          <span class="engrave">Night Mode</span>
+          <button id="night" class="switch px-4 py-2 text-[11px]" aria-pressed="false">Off</button>
+        </div>
+      </section>
+
+      <details class="mt-1 text-[10px]">
+        <summary class="engrave cursor-pointer select-none">Log</summary>
+        <pre id="log" class="readout mt-2 max-h-28 overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed text-cream/40"></pre>
+      </details>
+      </div>
+
+      <!-- ── Now playing (Windows media session) ── -->
+      <div id="nowPlaying" class="hidden items-center gap-2.5 border-t border-[#e9e1cf]/8 pt-3">
+        <div class="min-w-0 flex-1">
+          <div id="npTitle" class="truncate text-[12.5px] text-cream">—</div>
+          <div id="npArtist" class="truncate text-[11px] text-cream/45">—</div>
+        </div>
+        <button id="npPrev" class="switch flex h-8 w-8 items-center justify-center rounded-full" title="Previous">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2.2v12H6zm3.2 6 9 6V6z" /></svg>
+        </button>
+        <button id="npPlay" class="switch on flex h-9 w-9 items-center justify-center rounded-full" title="Play / Pause"></button>
+        <button id="npNext" class="switch flex h-8 w-8 items-center justify-center rounded-full" title="Next">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 6H18v12h-2.2zM6 6v12l9-6z" /></svg>
+        </button>
+      </div>
+
+      <footer class="readout pt-2 text-center text-[10px] text-cream/25">
+        Zound control service fccd
+      </footer>
+      </div>
+    </main>
+
+    <!-- ── Device chooser (overlay) ── -->
+    <div id="chooser" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 px-6">
+      <div class="cabinet w-full max-w-[340px] bg-[#171210] p-5">
+        <div class="engrave mb-3">Select speaker</div>
+        <div id="deviceList" class="flex flex-col gap-2">
+          <div class="readout text-[12px] text-cream/40">Scanning…</div>
+        </div>
+        <button id="chooserCancel" class="switch mt-4 w-full py-2.5 text-[11px]">Cancel</button>
+      </div>
+    </div>
+
+    <!-- avoid-ai-design-ignore: M6 — reduced motion IS honored: ANIM gate in renderer.js + @media(prefers-reduced-motion) in input.css -->
+    <script src="vendor/gsap.min.js"></script>
+    <script src="ble-protocol.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>
