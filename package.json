@@ -20,5 +20,8 @@
   },
   "peerDependencies": {
     "typescript": "^7"
+  },
+  "dependencies": {
+    "gsap": "^3.15.1"
   }
 }

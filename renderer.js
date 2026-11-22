@@ -21,6 +21,11 @@ const bridge = window.ble || { send() {}, onEvent() {} };
 const $ = (id) => document.getElementById(id);
 const body = document.body;
 
+/* ───────────── Motion (GSAP) ───────────── */
+// ANIM gates every animation: off if GSAP failed to load or the user asked for reduced motion.
+const ANIM = typeof gsap !== 'undefined' && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+if (typeof gsap !== 'undefined') gsap.defaults({ ease: 'power3.out', duration: 0.5 });
+
 const powerBtn = $('powerBtn');
 const statusText = $('statusText');
 const statusMeta = $('statusMeta');
@@ -100,6 +105,21 @@ function renderVolume() {
   volArc.setAttribute('stroke-dasharray', `${frac * ARC_FULL} 490`);
   knob.setAttribute('aria-valuenow', String(pct));
   knob.setAttribute('aria-valuemax', '100');
+}
+// Smoothly tween the needle to a target step (used for remote changes + the connect sweep).
+// User drag stays instant via renderVolume() — never routed through here.
+let sweepPending = false; // connect: sweep 0 -> real value when it first arrives
+let volTween = null;
+function animateVolumeTo(target) {
+  target = clamp(target, 0, volMax);
+  if (!ANIM) { volume = target; renderVolume(); return; }
+  if (volTween) volTween.kill();
+  const proxy = { v: volume };
+  volTween = gsap.to(proxy, {
+    v: target, duration: 0.6, ease: 'expo.out',
+    onUpdate() { volume = proxy.v; renderVolume(); },
+    onComplete() { volume = target; renderVolume(); },
+  });
 }
 function setVolume(v, write = false) {
   volume = clamp(v, 0, volMax);
@@ -209,6 +229,7 @@ calibBtn.addEventListener('click', () => {
   calibStatus.classList.remove('hidden');
   calibStatus.textContent = 'Calibrating… keep audio paused';
   calibBtn.setAttribute('disabled', 'true');
+  if (ANIM) gsap.fromTo(calibStatus, { autoAlpha: 0.45 }, { autoAlpha: 1, duration: 0.7, ease: 'sine.inOut', repeat: -1, yoyo: true });
   bridge.send({ cmd: 'calibrate' });
 });
 
@@ -220,7 +241,10 @@ function setDeviceImage(name) {
   if (!code) { deviceImg.removeAttribute('src'); return; }
   const colors = ['p1', 'all'];
   let i = 0;
-  deviceImg.onload = () => deviceImg.classList.remove('hidden');
+  deviceImg.onload = () => {
+    deviceImg.classList.remove('hidden');
+    if (ANIM) gsap.fromTo(deviceImg, { autoAlpha: 0, scale: 0.84, y: 16 }, { autoAlpha: 1, scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.4)' });
+  };
   deviceImg.onerror = () => {
     i += 1;
     if (i < colors.length) deviceImg.src = `${IMG_BASE}${code}_${colors[i]}_hero_1-1_xxxhdpi.webp`;
@@ -235,14 +259,32 @@ const npPlay = $('npPlay');
 const ICON_PLAY = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 const ICON_PAUSE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
 npPlay.innerHTML = ICON_PLAY;
+function hideNowPlaying() { nowPlaying.classList.add('hidden'); nowPlaying.classList.remove('flex'); }
 function onMedia(e) {
   const hasMedia = (e.title && e.title.trim()) || (e.artist && e.artist.trim());
-  if (!hasMedia) { nowPlaying.classList.add('hidden'); nowPlaying.classList.remove('flex'); return; }
+  if (!hasMedia) {
+    if (ANIM && nowPlaying.classList.contains('flex')) {
+      gsap.to(nowPlaying, { autoAlpha: 0, y: 8, duration: 0.3, ease: 'power2.in', onComplete: hideNowPlaying });
+    } else hideNowPlaying();
+    return;
+  }
+  const wasHidden = nowPlaying.classList.contains('hidden');
   nowPlaying.classList.remove('hidden');
   nowPlaying.classList.add('flex');
+
+  const titleChanged = $('npTitle').textContent !== (e.title || '—');
   $('npTitle').textContent = e.title || '—';
   $('npArtist').textContent = e.artist || '';
-  npPlay.innerHTML = e.status === 4 ? ICON_PAUSE : ICON_PLAY; // 4 = Playing
+
+  const playing = e.status === 4; // 4 = Playing
+  if (npPlay.dataset.playing !== String(playing)) {
+    npPlay.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+    npPlay.dataset.playing = String(playing);
+    if (ANIM && !wasHidden) gsap.fromTo(npPlay, { scale: 0.7 }, { scale: 1, duration: 0.35, ease: 'back.out(2.5)' });
+  }
+
+  if (ANIM && wasHidden) gsap.fromTo(nowPlaying, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power3.out' });
+  else if (ANIM && titleChanged) gsap.fromTo([$('npTitle'), $('npArtist')], { autoAlpha: 0, x: -8 }, { autoAlpha: 1, x: 0, duration: 0.4, ease: 'power2.out', stagger: 0.05 });
 }
 npPlay.addEventListener('click', () => bridge.send({ cmd: 'media', action: 'playpause' }));
 $('npPrev').addEventListener('click', () => bridge.send({ cmd: 'media', action: 'prev' }));
@@ -271,8 +313,13 @@ function onConnected(e) {
   curDeviceName = e.name || '';
   setDeviceImage(e.name);
   calibTable = loadCalib(curDeviceName); // use saved calibration for this device if present
+  if (ANIM) { sweepPending = true; volume = 0; } // needle starts at 0, sweeps up when the real value arrives
   renderVolume();
   document.querySelectorAll('[data-needs]').forEach((el) => el.classList.toggle('unavailable', !availChars.has(el.dataset.needs)));
+  if (ANIM) {
+    gsap.fromTo('.led', { scale: 0.3 }, { scale: 1, duration: 0.5, ease: 'back.out(3)' }); // pilot light powers on
+    gsap.from('.scroll-area > *', { y: 12, duration: 0.55, stagger: 0.06, ease: 'power3.out' }); // control stack lifts in
+  }
 }
 
 function onDisconnected() {
@@ -281,13 +328,26 @@ function onDisconnected() {
   powerBtn.setAttribute('aria-pressed', 'false');
   setStatus('Standby');
   metaFw = ''; metaBatt = null; renderMeta();
-  deviceImg.classList.add('hidden');
+  sweepPending = false;
+  if (ANIM && !deviceImg.classList.contains('hidden')) {
+    gsap.to(deviceImg, { autoAlpha: 0, scale: 0.9, duration: 0.35, ease: 'power2.in', onComplete: () => deviceImg.classList.add('hidden') });
+  } else {
+    deviceImg.classList.add('hidden');
+  }
+  deviceNameEl.textContent = 'Not connected';
+  curDeviceName = '';
 }
 
 function onValue(char, hex) {
   const dv = hexToDv(hex);
   switch (char) {
-    case 'VOLUME': { const raw = dec.volume(dv); if (raw >= 0 && Date.now() - lastVolTouch > 500) { volume = raw; renderVolume(); } break; }
+    case 'VOLUME': {
+      const raw = dec.volume(dv);
+      if (raw < 0) break;
+      if (sweepPending) { sweepPending = false; volume = 0; renderVolume(); animateVolumeTo(raw); }
+      else if (Date.now() - lastVolTouch > 500) animateVolumeTo(raw);
+      break;
+    }
     case 'VOLUME_LIMIT': { const m = dec.u8(dv); if (m > 0) { volMax = m; renderVolume(); } break; }
     case 'AUDIO_SOURCE': reflectSource(dec.source(dv)); break;
     case 'NIGHT_MODE': setNight(dec.night(dv), false); break;
@@ -320,6 +380,7 @@ bridge.onEvent((e) => {
       calibTable = e.table;
       saveCalib(curDeviceName, e.limit, e.table);
       calibBtn.removeAttribute('disabled');
+      if (ANIM) { gsap.killTweensOf(calibStatus); gsap.set(calibStatus, { autoAlpha: 1 }); }
       calibStatus.textContent = 'Calibrated ✓';
       setTimeout(() => calibStatus.classList.add('hidden'), 2500);
       renderVolume();
@@ -327,7 +388,7 @@ bridge.onEvent((e) => {
     case 'error':
       log('ERROR [' + e.where + (e.char ? '/' + e.char : '') + ']: ' + e.message);
       if (e.where === 'connect' || e.where === 'spawn') { hideChooser(); setStatus('Standby'); }
-      if (e.where === 'calibrate') { calibrating = false; calibBtn.removeAttribute('disabled'); calibStatus.textContent = 'Calibrate failed: ' + e.message; }
+      if (e.where === 'calibrate') { calibrating = false; calibBtn.removeAttribute('disabled'); if (ANIM) { gsap.killTweensOf(calibStatus); gsap.set(calibStatus, { autoAlpha: 1 }); } calibStatus.textContent = 'Calibrate failed: ' + e.message; }
       break;
     case 'log': log(e.message); break;
   }
@@ -343,10 +404,21 @@ function showChooser() {
   deviceListEl.innerHTML = '<div class="readout text-[12px] text-cream/40">Scanning…</div>';
   chooser.classList.remove('hidden');
   chooser.classList.add('flex');
+  if (ANIM) {
+    gsap.fromTo(chooser, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: 'power2.out' });
+    gsap.fromTo(chooser.firstElementChild, { scale: 0.92, y: 14, autoAlpha: 0 }, { scale: 1, y: 0, autoAlpha: 1, duration: 0.4, ease: 'back.out(1.5)' });
+  }
 }
 function hideChooser() {
-  chooser.classList.add('hidden');
-  chooser.classList.remove('flex');
+  if (ANIM && chooser.classList.contains('flex')) {
+    gsap.to(chooser, { autoAlpha: 0, duration: 0.2, ease: 'power2.in', onComplete: () => {
+      chooser.classList.add('hidden'); chooser.classList.remove('flex');
+      gsap.set(chooser, { clearProps: 'opacity,visibility' });
+    } });
+  } else {
+    chooser.classList.add('hidden');
+    chooser.classList.remove('flex');
+  }
 }
 function addDevice(d) {
   if (chooserEmpty) { deviceListEl.innerHTML = ''; chooserEmpty = false; }
@@ -358,12 +430,32 @@ function addDevice(d) {
   b.textContent = d.name;
   b.addEventListener('click', () => { setStatus('Connecting'); bridge.send({ cmd: 'connect', address: d.address }); });
   deviceListEl.appendChild(b);
+  if (ANIM) gsap.from(b, { autoAlpha: 0, y: 8, duration: 0.35, ease: 'power3.out' });
 }
 $('chooserCancel').addEventListener('click', () => {
   bridge.send({ cmd: 'stopScan' });
   hideChooser();
   setStatus('Standby');
 });
+
+/* ───────────── Entrance + tactile press (GSAP) ───────────── */
+if (ANIM) {
+  // amp powers up — header chrome settles into place
+  gsap.timeline({ delay: 0.06 })
+    .from('.wordmark', { y: -12, autoAlpha: 0, duration: 0.6 })
+    .from('#deviceName', { y: -6, autoAlpha: 0, duration: 0.4 }, '-=0.35')
+    .from('#powerBtn', { scale: 0.5, autoAlpha: 0, duration: 0.5, ease: 'back.out(2)' }, '-=0.45')
+    .from('#statusText', { x: -8, autoAlpha: 0, duration: 0.4 }, '-=0.2')
+    .from('.titlebar button', { autoAlpha: 0, duration: 0.3, stagger: 0.05 }, '-=0.35');
+
+  // tactile press on every amp switch (power, source, presets, night, calibrate, transport, chooser)
+  let pressed = null;
+  const press = (b, s) => gsap.to(b, { scale: s, duration: s < 1 ? 0.08 : 0.3, ease: s < 1 ? 'power2.out' : 'back.out(2)' });
+  document.addEventListener('pointerdown', (e) => { const b = e.target.closest('.switch'); if (b) { pressed = b; press(b, 0.94); } });
+  const release = () => { if (pressed) { press(pressed, 1); pressed = null; } };
+  document.addEventListener('pointerup', release);
+  document.addEventListener('pointercancel', release);
+}
 
 log('Press power to scan for your speaker.');
 console.log('[renderer] loaded OK; power listener attached =', !!powerBtn);
