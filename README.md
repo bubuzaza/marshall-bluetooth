@@ -25,7 +25,8 @@ now-playing info, in a portrait amp-styled window.
 - **Night mode** — the speaker's dynamic-range limiter (tames loud peaks for quiet-hours listening)
 - **Now playing** — title / artist with transport controls, from the Windows media session
 - **Per-model artwork** from Marshall's image CDN, with **multi-model** support via a ~28-model catalog
-- Amp-styled UI with GSAP motion (honors `prefers-reduced-motion`)
+- **System tray** — closing hides to the tray and keeps the speaker connected in the background
+- Amp-styled UI with GSAP motion — power-on needle sweep, 3D hover tilt on the speaker, smooth transitions — all honoring `prefers-reduced-motion`
 
 ---
 
