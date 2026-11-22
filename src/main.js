@@ -6,7 +6,7 @@ import fs from 'node:fs';
 
 Menu.setApplicationMenu(null); // clean amp look — no default File/Edit/View menu
 
-const DEBUG_LOG = path.join(import.meta.dirname, 'debug.log');
+const DEBUG_LOG = path.join(import.meta.dirname, '..', 'debug.log'); // repo root
 try { fs.writeFileSync(DEBUG_LOG, ''); } catch {}
 function dlog(s) {
   try { fs.appendFileSync(DEBUG_LOG, new Date().toISOString() + ' ' + s + '\n'); } catch {}
@@ -15,7 +15,7 @@ function dlog(s) {
 let py = null;
 
 function startBridge(win) {
-  py = spawn('python', ['-X', 'utf8', path.join(import.meta.dirname, 'ble_bridge.py')], {
+  py = spawn('python', ['-X', 'utf8', path.join(import.meta.dirname, 'bridge', 'ble_bridge.py')], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
@@ -59,7 +59,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile(path.join(import.meta.dirname, 'index.html'));
+  win.loadFile(path.join(import.meta.dirname, 'renderer', 'index.html'));
   win.once('ready-to-show', () => win.show());
 
   // Marshall's image CDN requires this header; <img> tags can't set it, so inject it here.

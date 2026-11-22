@@ -1,27 +1,24 @@
 {
-  "name": "flatback",
-  "module": "index.ts",
-  "main": "main.js",
+  "name": "marshall-controller",
+  "version": "1.0.0",
+  "description": "Desktop controller for Marshall / Zound Bluetooth speakers (Stanmore III and other models) over BLE.",
   "type": "module",
+  "main": "src/main.js",
   "private": true,
   "scripts": {
-    "css": "tailwindcss -i ./input.css -o ./styles.css",
-    "css:watch": "tailwindcss -i ./input.css -o ./styles.css --watch",
-    "start": "electron ."
+    "start": "electron .",
+    "css": "tailwindcss -i ./src/renderer/input.css -o ./src/renderer/styles.css",
+    "css:watch": "tailwindcss -i ./src/renderer/input.css -o ./src/renderer/styles.css --watch"
   },
   "trustedDependencies": [
     "electron"
   ],
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.3.5",
-    "@types/bun": "latest",
-    "electron": "^45.4.1",
-    "tailwindcss": "^4.3.5"
-  },
-  "peerDependencies": {
-    "typescript": "^7"
-  },
   "dependencies": {
     "gsap": "^3.15.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "electron": "^45.4.1",
+    "tailwindcss": "^4.3.5"
   }
 }

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: scan this folder's templates for class names (vendor/ is excluded on purpose). */
+@source "./*.{html,js}";
+
 /*
   avoid-ai-design-ignore-file: SD2
   Palette is grounded in the physical product (a Marshall amp): warm vinyl-black
