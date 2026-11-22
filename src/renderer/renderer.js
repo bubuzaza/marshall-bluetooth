@@ -255,6 +255,32 @@ function setDeviceImage(name) {
   deviceImg.src = `${IMG_BASE}${code}_${colors[0]}_hero_1-1_xxxhdpi.webp`;
 }
 
+// Playful 3D tilt + lift while hovering the speaker render (like inspecting it in 3D).
+if (ANIM && deviceImg) {
+  const MAX = 8; // max tilt, degrees
+  let hovering = false;
+  deviceImg.addEventListener('pointerenter', () => {
+    if (deviceImg.classList.contains('hidden')) return;
+    hovering = true;
+    gsap.to(deviceImg, { scale: 1.06, duration: 0.4, ease: 'power2.out' });
+  });
+  deviceImg.addEventListener('pointermove', (e) => {
+    if (!hovering) return;
+    const r = deviceImg.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5; // -0.5 .. 0.5
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    gsap.to(deviceImg, {
+      rotationY: px * MAX * 2, rotationX: -py * MAX * 2,
+      transformPerspective: 800, transformOrigin: 'center center',
+      duration: 0.5, ease: 'power2.out',
+    });
+  });
+  deviceImg.addEventListener('pointerleave', () => {
+    hovering = false;
+    gsap.to(deviceImg, { rotationX: 0, rotationY: 0, scale: 1, duration: 0.6, ease: 'power3.out' });
+  });
+}
+
 /* ───────────── Now playing (Windows media session) ───────────── */
 const nowPlaying = $('nowPlaying');
 const npPlay = $('npPlay');
