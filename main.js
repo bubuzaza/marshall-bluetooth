@@ -51,6 +51,8 @@ function createWindow() {
     maxWidth: 520,
     backgroundColor: '#120f0e',
     show: false,
+    frame: false, // custom amp-themed title bar
+    maximizable: false, // fixed portrait app — minimize + close only
     webPreferences: {
       contextIsolation: true,
       preload: path.join(import.meta.dirname, 'preload.cjs'),
@@ -59,6 +61,15 @@ function createWindow() {
 
   win.loadFile(path.join(import.meta.dirname, 'index.html'));
   win.once('ready-to-show', () => win.show());
+
+  // Marshall's image CDN requires this header; <img> tags can't set it, so inject it here.
+  win.webContents.session.webRequest.onBeforeSendHeaders(
+    { urls: ['https://app-images.marshall.software/*'] },
+    (details, cb) => {
+      details.requestHeaders['marshall-mobile-app-version'] = '3.9.2';
+      cb({ requestHeaders: details.requestHeaders });
+    },
+  );
 
   win.webContents.on('console-message', (...args) => {
     const a = args[0];
@@ -79,6 +90,14 @@ ipcMain.on('ble:cmd', (_e, cmd) => {
     try { py.stdin.write(JSON.stringify(cmd) + '\n'); } catch { /* bridge gone */ }
   }
 });
+
+// custom window controls
+ipcMain.on('win:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize());
+ipcMain.on('win:maximize', (e) => {
+  const w = BrowserWindow.fromWebContents(e.sender);
+  if (w) (w.isMaximized() ? w.unmaximize() : w.maximize());
+});
+ipcMain.on('win:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close());
 
 function stopBridge() {
   if (py) { try { py.kill(); } catch {} py = null; }

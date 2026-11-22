@@ -4,13 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marshall Controller</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://app-images.marshall.software; script-src 'self'" />
     <link rel="stylesheet" href="styles.css" />
   </head>
 
   <!-- avoid-ai-design-ignore-file: K7 — :focus-visible is handled centrally in input.css (brass ring on all controls) -->
-  <body class="flex h-screen justify-center overflow-hidden px-4 py-4">
-    <div class="cabinet flex h-full w-full max-w-[380px] flex-col gap-4 bg-[#141010] px-5 py-5">
+  <body class="flex h-screen flex-col overflow-hidden">
+    <header id="titlebar" class="titlebar">
+      <button id="winMin" title="Minimize">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1"><path d="M2 6h8" /></svg>
+      </button>
+      <button id="winClose" title="Close">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M3 3l6 6M9 3l-6 6" /></svg>
+      </button>
+    </header>
+    <main class="flex min-h-0 flex-1 justify-center">
+      <div class="cabinet flex h-full w-full max-w-[440px] flex-col gap-4 px-6 pt-2 pb-3">
       <!-- ── Header ── -->
       <header class="flex items-start justify-between">
         <div>
@@ -41,6 +50,10 @@
       </div>
 
       <div class="scroll-area flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
+      <!-- ── Device image (remote, per model) ── -->
+      <div class="deviceimg-wrap flex justify-center pt-1">
+        <img id="deviceImg" alt="" class="hidden -mt-14 max-h-[380px] w-auto object-contain drop-shadow-2xl" />
+      </div>
       <!-- ── Volume (hero) ── -->
       <section class="controls flex flex-col items-center gap-2 pt-1" data-needs="VOLUME">
         <div class="engrave">Volume</div>
@@ -128,10 +141,26 @@
       </details>
       </div>
 
+      <!-- ── Now playing (Windows media session) ── -->
+      <div id="nowPlaying" class="hidden items-center gap-2.5 border-t border-[#e9e1cf]/8 pt-3">
+        <div class="min-w-0 flex-1">
+          <div id="npTitle" class="truncate text-[12.5px] text-cream">—</div>
+          <div id="npArtist" class="truncate text-[11px] text-cream/45">—</div>
+        </div>
+        <button id="npPrev" class="switch flex h-8 w-8 items-center justify-center rounded-full" title="Previous">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2.2v12H6zm3.2 6 9 6V6z" /></svg>
+        </button>
+        <button id="npPlay" class="switch on flex h-9 w-9 items-center justify-center rounded-full" title="Play / Pause"></button>
+        <button id="npNext" class="switch flex h-8 w-8 items-center justify-center rounded-full" title="Next">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 6H18v12h-2.2zM6 6v12l9-6z" /></svg>
+        </button>
+      </div>
+
       <footer class="readout pt-2 text-center text-[10px] text-cream/25">
         Zound control service fccd
       </footer>
-    </div>
+      </div>
+    </main>
 
     <!-- ── Device chooser (overlay) ── -->
     <div id="chooser" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 px-6">

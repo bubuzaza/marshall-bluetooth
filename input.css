@@ -58,14 +58,7 @@
 
   ::-webkit-scrollbar {
     width: 0;
-  }
-  /* visible thin scrollbar for the scrollable controls region */
-  .scroll-area::-webkit-scrollbar {
-    width: 6px;
-  }
-  .scroll-area::-webkit-scrollbar-thumb {
-    background: rgba(233, 225, 207, 0.16);
-    border-radius: 999px;
+    height: 0;
   }
 
   button[disabled] {
@@ -88,12 +81,41 @@
   .cabinet {
     position: relative;
     z-index: 1;
-    border: 1px solid rgba(233, 225, 207, 0.16);
-    border-radius: 22px;
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.6),
-      inset 0 0 0 1px rgba(233, 225, 207, 0.05),
-      inset 0 2px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  /* soft brass spotlight behind the device image (collapses to nothing when the image is hidden) */
+  .deviceimg-wrap {
+    background: radial-gradient(58% 72% at 50% 44%, rgba(216, 173, 82, 0.13), transparent 72%);
+  }
+
+  /* custom frameless title bar */
+  .titlebar {
+    -webkit-app-region: drag;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 3;
+  }
+  .titlebar button {
+    -webkit-app-region: no-drag;
+    width: 44px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(233, 225, 207, 0.5);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .titlebar button:hover {
+    background: rgba(233, 225, 207, 0.08);
+    color: var(--color-cream);
+  }
+  #winClose:hover {
+    background: #c0392b;
+    color: #fff;
   }
 
   /* Marshall script wordmark */

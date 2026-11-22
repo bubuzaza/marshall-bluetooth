@@ -15,7 +15,7 @@ window.addEventListener('error', (e) => _rlog('JS ERROR: ' + (e && (e.message ||
 if (!window.BLE) _rlog('FATAL: ble-protocol.js did not load (window.BLE missing).');
 if (!window.ble) _rlog('FATAL: preload bridge missing (window.ble undefined) — check preload.cjs.');
 
-const { CHARS, SOURCE_CODE, enc, dec } = window.BLE || {};
+const { CHARS, SOURCE_CODE, enc, dec, IMG_BASE, MODEL_CODENAME } = window.BLE || {};
 const bridge = window.ble || { send() {}, onEvent() {} };
 
 const $ = (id) => document.getElementById(id);
@@ -26,6 +26,10 @@ const statusText = $('statusText');
 const statusMeta = $('statusMeta');
 const deviceNameEl = $('deviceName');
 const logEl = $('log');
+
+// frameless window controls
+$('winMin').addEventListener('click', () => window.win?.minimize());
+$('winClose').addEventListener('click', () => window.win?.close());
 
 const toHex = (u8) => [...u8].map((b) => b.toString(16).padStart(2, '0')).join('');
 const hexToDv = (hex) => {
@@ -208,6 +212,42 @@ calibBtn.addEventListener('click', () => {
   bridge.send({ cmd: 'calibrate' });
 });
 
+/* ───────────── Device image (remote, per model) ───────────── */
+const deviceImg = $('deviceImg');
+function setDeviceImage(name) {
+  const code = MODEL_CODENAME[(name || '').trim().toUpperCase()];
+  deviceImg.classList.add('hidden');
+  if (!code) { deviceImg.removeAttribute('src'); return; }
+  const colors = ['p1', 'all'];
+  let i = 0;
+  deviceImg.onload = () => deviceImg.classList.remove('hidden');
+  deviceImg.onerror = () => {
+    i += 1;
+    if (i < colors.length) deviceImg.src = `${IMG_BASE}${code}_${colors[i]}_hero_1-1_xxxhdpi.webp`;
+    else deviceImg.classList.add('hidden');
+  };
+  deviceImg.src = `${IMG_BASE}${code}_${colors[0]}_hero_1-1_xxxhdpi.webp`;
+}
+
+/* ───────────── Now playing (Windows media session) ───────────── */
+const nowPlaying = $('nowPlaying');
+const npPlay = $('npPlay');
+const ICON_PLAY = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const ICON_PAUSE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+npPlay.innerHTML = ICON_PLAY;
+function onMedia(e) {
+  const hasMedia = (e.title && e.title.trim()) || (e.artist && e.artist.trim());
+  if (!hasMedia) { nowPlaying.classList.add('hidden'); nowPlaying.classList.remove('flex'); return; }
+  nowPlaying.classList.remove('hidden');
+  nowPlaying.classList.add('flex');
+  $('npTitle').textContent = e.title || '—';
+  $('npArtist').textContent = e.artist || '';
+  npPlay.innerHTML = e.status === 4 ? ICON_PAUSE : ICON_PLAY; // 4 = Playing
+}
+npPlay.addEventListener('click', () => bridge.send({ cmd: 'media', action: 'playpause' }));
+$('npPrev').addEventListener('click', () => bridge.send({ cmd: 'media', action: 'prev' }));
+$('npNext').addEventListener('click', () => bridge.send({ cmd: 'media', action: 'next' }));
+
 /* ───────────── Connect / power ───────────── */
 powerBtn.addEventListener('click', () => {
   if (connected) {
@@ -229,6 +269,7 @@ function onConnected(e) {
   setStatus('Connected');
   if (e.name) deviceNameEl.textContent = e.name;
   curDeviceName = e.name || '';
+  setDeviceImage(e.name);
   calibTable = loadCalib(curDeviceName); // use saved calibration for this device if present
   renderVolume();
   document.querySelectorAll('[data-needs]').forEach((el) => el.classList.toggle('unavailable', !availChars.has(el.dataset.needs)));
@@ -240,6 +281,7 @@ function onDisconnected() {
   powerBtn.setAttribute('aria-pressed', 'false');
   setStatus('Standby');
   metaFw = ''; metaBatt = null; renderMeta();
+  deviceImg.classList.add('hidden');
 }
 
 function onValue(char, hex) {
@@ -250,7 +292,7 @@ function onValue(char, hex) {
     case 'AUDIO_SOURCE': reflectSource(dec.source(dv)); break;
     case 'NIGHT_MODE': setNight(dec.night(dv), false); break;
     case 'GRAPHICAL_EQ': eqState = dec.eq5(dv); reflectEq(); break;
-    case 'MODEL_NAME': { const n = dec.str(dv); if (n) deviceNameEl.textContent = n; break; }
+    case 'MODEL_NAME': { const n = dec.str(dv); if (n) { deviceNameEl.textContent = n; setDeviceImage(n); } break; }
     case 'FIRMWARE': metaFw = dec.str(dv); renderMeta(); break;
     case 'BATTERY': metaBatt = dec.u8(dv); renderMeta(); break;
   }
@@ -268,6 +310,7 @@ bridge.onEvent((e) => {
     case 'connected': onConnected(e); break;
     case 'ready': log('Ready.'); break;
     case 'value': onValue(e.char, e.hex); break;
+    case 'media': onMedia(e); break;
     case 'disconnected': onDisconnected(); log('Disconnected.'); break;
     case 'calibrateProgress':
       calibStatus.textContent = `Calibrating… ${e.step + 1}/${e.max + 1}`;

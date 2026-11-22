@@ -34,6 +34,20 @@
     SOURCE_CODE: { bt: 0, wifi: 1, aux: 2, rca: 3, optical: 4, hdmi: 5, bleaudio: 6, usbc: 7, broadcast: 8, hdmiearc: 9 },
     SOURCE_LABEL: { 0: 'Bluetooth', 1: 'Wi-Fi', 2: 'AUX', 3: 'RCA', 4: 'Optical', 5: 'HDMI', 6: 'BLE Audio', 7: 'USB-C', 8: 'Broadcast', 9: 'HDMI eARC' },
 
+    // Remote product images (Marshall CDN); map the MODEL_NAME characteristic -> image codename.
+    IMG_BASE: 'https://app-images.marshall.software/marshall-bt/android/prod/',
+    MODEL_CODENAME: {
+      'STANMORE III': 'tylerM', 'ACTON III': 'tylerS', 'WOBURN III': 'tylerL',
+      'EMBERTON II': 'embertonii', 'EMBERTON III': 'amyM', 'WILLEN': 'iggy', 'WILLEN II': 'amyS',
+      'MIDDLETON': 'lennox', 'MIDDLETON II': 'turner', 'MINOR III': 'jett', 'MINOR IV': 'moon',
+      'MAJOR V': 'plant', 'MONITOR III A.N.C.': 'watts', 'KILBURN III': 'robyn',
+      'MODE II': 'saxon', 'MOTIF A.N.C.': 'sammy', 'MOTIF II A.N.C.': 'gahan',
+      'BROMLEY 750': 'wembley', 'BROMLEY 450': 'smith', 'BROMLEY 150': 'lykke',
+      'STOCKWELL III': 'nina', 'MILTON A.N.C.': 'waters', 'ACTON IV': 'nicksS', 'STANMORE IV': 'nicksM',
+      'ACTON II': 'joplinS', 'STANMORE II': 'joplinM', 'WOBURN II': 'joplinL', 'OZZY': 'ozzy',
+      'URBANEARS JUNO': 'filippa',
+    },
+
     enc: {
       volume: (v) => Uint8Array.of(clamp(v, 0, 127)),
       source: (code) => Uint8Array.of(code & 0xff),

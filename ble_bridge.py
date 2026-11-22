@@ -299,6 +299,62 @@ async def do_disconnect():
         client = None
 
 
+# ───────────── Now-playing via Windows media session (SMTC) ─────────────
+_MGR = None
+
+
+async def _smtc():
+    global _MGR
+    if _MGR is None:
+        from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as M
+        _MGR = await M.request_async()
+    return _MGR
+
+
+async def media_loop():
+    # poll the OS media session and push title/artist/status changes to the UI
+    try:
+        mgr = await _smtc()
+    except Exception as e:
+        send({'evt': 'log', 'message': 'media session unavailable: ' + str(e)})
+        return
+    last = None
+    while True:
+        cur = {'title': '', 'artist': '', 'status': 0}
+        try:
+            sess = mgr.get_current_session()
+            if sess is not None:
+                props = await sess.try_get_media_properties_async()
+                info = sess.get_playback_info()
+                cur = {'title': props.title or '', 'artist': props.artist or '', 'status': int(info.playback_status)}
+        except Exception:
+            pass
+        if cur != last:
+            last = cur
+            send({'evt': 'media', 'title': cur['title'], 'artist': cur['artist'], 'status': cur['status']})
+        await asyncio.sleep(1.5)
+
+
+async def do_media(action):
+    try:
+        mgr = await _smtc()
+        sess = mgr.get_current_session()
+        if sess is None:
+            return
+        if action == 'play':
+            await sess.try_play_async()
+        elif action == 'pause':
+            await sess.try_pause_async()
+        elif action == 'playpause':
+            await sess.try_toggle_play_pause_async()
+        elif action == 'next':
+            await sess.try_skip_next_async()
+        elif action == 'prev':
+            await sess.try_skip_previous_async()
+    except Exception as e:
+        send({'evt': 'log', 'message': 'media ' + str(action) + ': ' + str(e)})
+
+
 async def handle(cmd):
     c = cmd.get('cmd')
     if c == 'scan':
@@ -314,6 +370,8 @@ async def handle(cmd):
         await do_write(cmd['char'], cmd['hex'])
     elif c == 'calibrate':
         await do_calibrate()
+    elif c == 'media':
+        await do_media(cmd.get('action'))
 
 
 async def main():
@@ -334,6 +392,7 @@ async def main():
 
     threading.Thread(target=reader, daemon=True).start()
     send({'evt': 'bridge_ready'})
+    asyncio.create_task(media_loop())  # OS now-playing poller (independent of BLE)
 
     while True:
         cmd = await q.get()
